@@ -1,3 +1,17 @@
+# Specifics
+
+## Files
+*.vec
+*.out
+*.txt
+*.pdf
+*.model
+
+## Folders
+datasets
+.voc
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

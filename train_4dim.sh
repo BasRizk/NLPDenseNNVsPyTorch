@@ -1,0 +1,11 @@
+export HIDDEN_UNITS=50
+export LEARNING_RATE=0.01
+export NUM_EPOCHS=100
+export MAX_SEQUENCE_LENGTH=100
+
+export MINI_BATCH_SIZE=32
+
+export DATASET=datasets/4dim.train.txt
+export OUT_MODEL_FILE=4dim.model
+export EMBEDDING_FILE=glove.6B.50d.txt,unk-eng.vec
+python train.py -u $HIDDEN_UNITS -l $LEARNING_RATE -f $MAX_SEQUENCE_LENGTH -b $MINI_BATCH_SIZE -e $NUM_EPOCHS -E $EMBEDDING_FILE -i $DATASET -o $OUT_MODEL_FILE
