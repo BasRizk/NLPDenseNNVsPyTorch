@@ -28,7 +28,7 @@ class Features:
     @classmethod
     def get_features(cls, input_file, word_to_vec,
                      embedding_size, max_sequence, labeled=True,
-                     label_to_index=None):
+                     label_to_index=None, shuffle=True):
         def tokens_to_embeds(x):
             embedding = np.zeros(embedding_size*max_sequence)
             for token_i, token in enumerate(x):
@@ -43,8 +43,10 @@ class Features:
         
         with open(input_file, encoding="utf-8") as file:
             data = file.read().splitlines()
-            
-        
+         
+        if shuffle:    
+            np.random.shuffle(data)
+
         if labeled:
             data_split = map(methodcaller("rsplit", "\t", 1), data)
             texts, labels = map(list, zip(*data_split))

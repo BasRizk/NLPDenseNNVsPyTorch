@@ -3,6 +3,8 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 
+# NEGLIGIBLE_VALUE = 1E-03
+
 class NNComp(ABC):
     """
     This is one design option you might consider. Though it's
@@ -48,19 +50,18 @@ class FeedForwardNetwork(NNComp):
     
     def classify(self, X):
         for layer in self._layers:
-            if layer.type.lower() == 'dropout':
-                continue
-            X = layer.forward(X) 
+            X = layer.predict(X) 
         return X
     
     def init_outputs_cache_space(self, batch_size):
         outputs = []
         for layer in self._layers:
-            outputs.append(np.empty((batch_size, layer.n_neurons)))
+            outputs.append(np.zeros((batch_size, layer.n_neurons)))
         return outputs
     
     def add(self, layer):
         if len(self._layers) > 0:
+            # breakpoint()
             layer._config_params(input_size=self._layers[-1].n_neurons)
         self._layers.append(layer)
         
@@ -68,8 +69,8 @@ class FeedForwardNetwork(NNComp):
         outputs_cache = self.init_outputs_cache_space(x.shape[0])                        
         _input = x
         for layer_i, layer in enumerate(self._layers):
-            
             _input = layer.forward(_input)    
+
             # Cache output for backward propagation
             outputs_cache[layer_i] = _input
             
@@ -130,6 +131,9 @@ class Dense:
             ' - scaling: ' + self.weights_init +\
             ' - ' + str(self.num_of_params) + ' params'
 
+    def predict(self, input_values):
+        return self.forward(input_values)
+    
     def forward(self, input_values):
         output = input_values.dot(self.weights) + self.bias
         output = self.activation(output)
@@ -179,15 +183,48 @@ class Dense:
         # vhat = v/(1-beta2**epoch)
         # d_w = mhat/(np.sqrt(vhat) + 1E-8)
         
-        # 6 update weights according to optimizer
-        # TODO Check others (SGD or Momentum or Adam.. if needed)
-        # CHECK DIFFERENT WEIGHTS FOR DIFFERENT OPTIMIZERS
-        # print(lr)
-
+        # 6 update weights
         self.weights -= lr*d_w
         self.bias -= lr*d_b
 
-        self.debug_i += 1
-        if self.debug_i > 10000:
-            breakpoint()
+        # self.debug_i += 1
+        # if self.debug_i > 10000:
+        #     breakpoint()
         return d_E_d_Ii
+    
+class Dropout:
+    def __init__(self, probability, input_size=None):
+        self.type = 'Dropout'
+        self.probability=probability
+        self.mask = None
+        self.input_size = input_size
+        if self.input_size is not None:
+            self._config_params()
+    
+    def _config_params(self, input_size=None):
+        self.input_size = input_size if input_size is not None else self.input_size
+        self.n_neurons = self.input_size
+        self.num_of_params = 0
+               
+    def __str__(self):
+        return self.type + ' layer - probability: ' + str(self.probability) +\
+            ' - input size: ' + str(self.input_size)
+        
+    def predict(self, input_values):
+        return input_values*(1-self.probability)
+    
+    def forward(self, input_values):
+        if self.mask is None:
+            self.mask = np.random.binomial(1, 1-self.probability,
+                                           input_values.shape)
+            # self.mask = self.mask/(1-self.probability) # Inverse Dropout
+        output = (input_values*self.mask)
+        return output
+    
+    def backpropagate(self, input_values, predicted_output,
+                      prev_gradient, lr, momentum): 
+        old_mask = self.mask
+        self.mask = None
+        d_E_d_Ii = prev_gradient*old_mask
+        return d_E_d_Ii
+    
