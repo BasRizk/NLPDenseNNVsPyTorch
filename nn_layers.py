@@ -96,6 +96,7 @@ class Dense:
         self.weights_init = weights_init
         if self.input_size is not None:
             self._config_params()
+        self.activation_type = activation
         self.set_activation_func(activation)
         self.debug_i = 0
 
@@ -105,15 +106,23 @@ class Dense:
         self.input_size = input_size if input_size is not None else self.input_size
         # Xavier Initialization
         self.weights = np.random.randn(self.input_size, self.n_neurons)
+        self.bias = np.random.randn(1, self.n_neurons)
         if self.weights_init == 'xavier':
             bound = np.sqrt(6)/np.sqrt(self.input_size + self.n_neurons)
+            self.weights = np.random.uniform(-1, 1, size=(self.input_size, self.n_neurons))
             self.weights = self.weights*(2*bound) - bound
+            self.bias = np.random.uniform(-1, 1, size=(1, self.n_neurons))
+            self.bias = self.bias*(2*bound) - bound
         elif self.weights_init == 'scaling':
-            self.weights = self.weights*0.01
+            self.weights = self.weights*(1/self.input_size)
+            self.bias = self.bias*0.01 # just a small value but not too small
         elif self.weights_init == 'zeros':
             self.weights = np.zeros((self.input_size, self.n_neurons))
+            self.bias = np.zeros((1, self.n_neurons))
+        elif self.weights_init == 'normal':
+            self.weights = np.random.normal(scale=1/self.input_size, size=(self.input_size, self.n_neurons))
+            self.bias = np.random.normal(scale=1/self.input_size, size=(1, self.n_neurons))
             
-        self.bias = np.zeros((1, self.n_neurons))
         self.num_of_params = self.weights.size + self.bias.size
 
     def set_activation_func(self, activation_type):
@@ -127,8 +136,9 @@ class Dense:
       
     def __str__(self):
         return self.type + ' layer - neurons: ' + str(self.n_neurons) +\
+            ' - activation type: ' + self.activation_type +\
             ' - inputs: ' + str(self.input_size) +\
-            ' - scaling: ' + self.weights_init +\
+            ' - weights_init_method: ' + self.weights_init +\
             ' - ' + str(self.num_of_params) + ' params'
 
     def predict(self, input_values):

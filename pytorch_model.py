@@ -13,13 +13,14 @@ class NeuralModel(Model):
     def __init__(self, n_hidden_neurons, max_sequence, embedding_files,
                 debug_file=None):
 
+
         self.n_hidden_neurons = n_hidden_neurons.split(',')
         self.max_sequence = max_sequence       
         self.embedding_files = embedding_files.split(',')
         # self.network = FeedForwardNetwork()
         self.debug_file = None
         if debug_file:
-            self.debug_file = open(debug_file, mode="a")
+            self.debug_file = open(debug_file, mode="w+")
         self.is_network_init = False  
         
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -107,7 +108,7 @@ class NeuralModel(Model):
         
         epochs_trange = tqdm(range(epochs), desc='Epochs')
         time_start = timer()
-        for _ in epochs_trange:
+        for epoch in epochs_trange:
             accumulated_training_corrects = 0
             accumulated_training_loss = 0
             for batch_i, (X, y) in enumerate(train_dataloader):
@@ -153,7 +154,8 @@ class NeuralModel(Model):
                 f' train_acc: {train_acc: < .2f}% -' +\
                 f' val_loss: {val_loss : < .2f} - val_acc: {val_acc: < .2f}%'
                 ) 
-        self.debug('Training took {:.3}s.'.format(time_stop))
+        
+        self.debug('Epoch took on average {:.3}s.'.format(time_stop/epoch))
 
         
         if self.debug_file:
@@ -163,7 +165,10 @@ class NeuralModel(Model):
     def classify(self, input_file):
         X_test = self._get_features(input_file, labeled=False)        
         index_to_label = {index: label for label, index in self.label_to_index.items()}
-        predictions = map(lambda x: index_to_label[x.item()], self._classify(X_test).argmax(1))
+        time_start = timer()
+        classification = self._classify(X_test)
+        print(f"Spent to classify {timer() - time_start : < 0.3}s")    
+        predictions = map(lambda x: index_to_label[x.item()], classification.argmax(1))
         self.debug('Finished Prediction')
         return predictions
     
@@ -180,25 +185,29 @@ class NeuralNetwork(nn.Module):
         
         input_size = embedding_size*max_sequence
         layers = []
-        for i, layer_units_num in enumerate(n_hidden_neurons):
-            if 'd' in layer_units_num.lower():
+        for layer_units_num in n_hidden_neurons:
+            parser = re.match(
+                        r'([a-z]+)([\d.]+)',
+                        layer_units_num.lower())
+            _type = parser.group(1)
+            _value = parser.group(2)
+            if 'd' == _type:
                 layers += [
-                    nn.Linear(input_size, input_size),
+                    nn.Flatten(),
                     nn.Dropout(
-                        float(re.match(r'd\((0\.\d+)\)',
-                                layer_units_num.lower())
-                                .group(1))
+                        float(_value)
                     )
                 ]
             else:
-                layers += [
-                    nn.Linear(input_size, int(layer_units_num)),
-                    nn.ReLU()
-                ]
-                input_size = int(layer_units_num)
+                layers.append(nn.Linear(input_size, int(_value)))
+                if 'sigmoid' == _type:
+                    layers.append(nn.Sigmoid())
+                elif 'relu' == _type:
+                    layers.append(nn.ReLU())
+                input_size = int(_value)
                 
         layers += [
-            nn.Linear(int(n_hidden_neurons[-1]), n_classes),
+            nn.Linear(input_size, n_classes),
             nn.Softmax(dim=1)
         ]
             
