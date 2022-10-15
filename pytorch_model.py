@@ -106,6 +106,9 @@ class NeuralModel(Model):
         num_of_batches = len(train_dataloader)
         self.network.train()
         
+        train_accuracies = []
+        valid_accuracies = []
+        
         epochs_trange = tqdm(range(epochs), desc='Epochs')
         time_start = timer()
         for epoch in epochs_trange:
@@ -133,7 +136,7 @@ class NeuralModel(Model):
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                
+
             train_acc = accumulated_training_corrects*100/n_samples
             val_pred = self._classify(X_valid)            
             val_loss = self.loss_fn(val_pred, Y_valid).item()
@@ -147,6 +150,10 @@ class NeuralModel(Model):
                 'val_acc:': f'{val_acc: < .2f}%',
             })
             print()
+            
+            train_accuracies.append(train_acc)
+            valid_accuracies.append(val_acc)
+            
         time_stop = timer() - time_start
 
         self.debug(
@@ -157,6 +164,10 @@ class NeuralModel(Model):
         
         self.debug('Epoch took on average {:.3}s.'.format(time_stop/epoch))
 
+        self.debug('train acc')
+        self.debug(str(train_accuracies))
+        self.debug('valid acc')
+        self.debug(str(valid_accuracies))
         
         if self.debug_file:
             self.debug_file.close()
@@ -165,6 +176,7 @@ class NeuralModel(Model):
     def classify(self, input_file):
         X_test = self._get_features(input_file, labeled=False)        
         index_to_label = {index: label for label, index in self.label_to_index.items()}
+        X_test = torch.tensor(X_test)
         time_start = timer()
         classification = self._classify(X_test)
         print(f"Spent to classify {timer() - time_start : < 0.3}s")    
@@ -174,8 +186,9 @@ class NeuralModel(Model):
     
     def _classify(self, X):
         self.network.eval()
+
         with torch.no_grad():
-            pred = self.network(torch.tensor(X).to(self.device))
+            pred = self.network(X.to(self.device))
         return pred
             
 class NeuralNetwork(nn.Module):
@@ -195,7 +208,7 @@ class NeuralNetwork(nn.Module):
                 layers += [
                     nn.Flatten(),
                     nn.Dropout(
-                        float(_value)
+                        float(_value),
                     )
                 ]
             else:

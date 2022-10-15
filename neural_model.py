@@ -6,7 +6,7 @@ from timeit import default_timer as timer
 
 
 from model import Model
-from nn_layers import FeedForwardNetwork, Dense, Dropout
+from NN_Layers.nn_layers import FeedForwardNetwork, Dense, Dropout
 from features import Features, tokenize
 from utils import split_data
 # np.random.seed(10)
@@ -86,7 +86,7 @@ class NeuralModel(Model):
         
     def train(self, input_file, 
               lr=0.0001, batch_size=10, epochs=1,
-              early_stopping=True,
+              early_stopping=False,
               stopping_chk_counts=15,
               stopping_tolerance=0.1):  
                 
@@ -100,7 +100,7 @@ class NeuralModel(Model):
         X_train, Y_train, X_valid, Y_valid =\
             split_data(features_list, labels)
         self._train(X_train, Y_train, X_valid, Y_valid,
-                    lr_decay_rate=1,
+                    lr_decay_rate=0,
                     lr=lr, batch_size=batch_size, epochs=epochs,
                     early_stopping=early_stopping,
                     stopping_chk_counts=stopping_chk_counts,
@@ -146,10 +146,13 @@ class NeuralModel(Model):
         old_val_acc = 0
         
         
+        train_accuracies = []
+        valid_accuracies = []
+            
         epochs_trange = tqdm(range(epochs), desc='Epochs')
         time_start = timer()
         for epoch in epochs_trange:
-            
+
             accumulated_training_corrects = 0
             accumulated_training_loss = 0
                  
@@ -204,6 +207,9 @@ class NeuralModel(Model):
             })
             print()
             
+            train_accuracies.append(train_acc)
+            valid_accuracies.append(val_acc)
+            
             if early_stopping:
                 if val_acc <= old_val_acc or abs(old_val_acc - val_acc) < stopping_tolerance:
                     early_chk += 1
@@ -211,7 +217,7 @@ class NeuralModel(Model):
                         self.debug(f'Early stopping @ epoch {epoch}')
                         break   
                 else:
-                    early_chk = 0
+                    early_chk -= 1
                 old_val_acc = val_acc
                 
 
@@ -224,6 +230,11 @@ class NeuralModel(Model):
                 ) 
         
         self.debug('Epoch took on average {:.3}s.'.format(time_stop/epoch))
+        
+        self.debug('train acc')
+        self.debug(str(train_accuracies))
+        self.debug('valid acc')
+        self.debug(str(valid_accuracies))
         
         if self.debug_file:
             self.debug_file.close()

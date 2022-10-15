@@ -180,8 +180,9 @@ class Dense:
         # d_E_d_Ij = (d_E_d_oj) (d_oj_d_Ij)
         d_E_d_Ij = self.d_E_d_Ij(predicted_output, incoming_gradient)
         # o_i * [d_E_d_Ij]
-        d_w = input_values.T.dot(d_E_d_Ij)/d_E_d_Ij.shape[0]
-        d_b = np.sum(d_E_d_Ij, axis=0)/d_E_d_Ij.shape[0]
+        # breakpoint()
+        d_w = input_values.T.dot(d_E_d_Ij)/input_values.shape[0]
+        d_b = np.sum(d_E_d_Ij, axis=0)/input_values.shape[0]
         
         # Incoming gradient for previous layer
         d_E_d_Ii = d_E_d_Ij.dot(self.weights.T)
@@ -221,20 +222,20 @@ class Dropout:
             ' - input size: ' + str(self.input_size)
         
     def predict(self, input_values):
-        return input_values*(1-self.probability)
+        return input_values#*(1-self.probability)
     
     def forward(self, input_values):
         if self.mask is None:
-            self.mask = np.random.binomial(1, 1-self.probability,
-                                           input_values.shape)
-            # self.mask = self.mask/(1-self.probability) # Inverse Dropout
-        output = (input_values*self.mask)
+            self.mask = np.random.binomial(1, 1-self.probability,input_values.shape)
+            self.mask = self.mask/(1-self.probability) # Inverse Dropout
+        output = input_values*self.mask
         return output
     
     def backpropagate(self, input_values, predicted_output,
                       prev_gradient, lr, momentum): 
         old_mask = self.mask
         self.mask = None
+        # breakpoint()
         d_E_d_Ii = prev_gradient*old_mask
         return d_E_d_Ii
     
