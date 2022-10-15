@@ -1,8 +1,8 @@
-export HIDDEN_UNITS=relu100
-export WEIGHTS_INIT=scaling # xavier or random or scaling or zeros
+export HIDDEN_UNITS=d0.5,relu18
+export WEIGHTS_INIT=normal # xavier or random or scaling or zeros
 export LEARNING_RATE=0.05
-export NUM_EPOCHS=20
-export MAX_SEQUENCE_LENGTH=20
+export NUM_EPOCHS=100
+export MAX_SEQUENCE_LENGTH=10
 
 export MINI_BATCH_SIZE=8
 export EMBEDDING_FILE=ufvytar.100d.txt,unk-ufvytar.vec
