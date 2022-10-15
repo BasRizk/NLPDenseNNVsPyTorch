@@ -2,7 +2,7 @@ export HIDDEN_UNITS=d0.5,relu12,d0.2,relu6
 # export HIDDEN_UNITS=relu450
 export WEIGHTS_INIT=scaling # zeros or xavier or scaling or random or normal
 export LEARNING_RATE=0.05
-export NUM_EPOCHS=100
+export NUM_EPOCHS=30
 export MAX_SEQUENCE_LENGTH=10
 
 export MINI_BATCH_SIZE=256

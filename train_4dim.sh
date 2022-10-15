@@ -1,10 +1,10 @@
-export HIDDEN_UNITS=relu32
-export WEIGHTS_INIT=xavier # xavier or random or scaling or zeros
-export LEARNING_RATE=0.05
-export NUM_EPOCHS=150
+export HIDDEN_UNITS=d0.5,relu16
+export WEIGHTS_INIT=scaling # xavier or random or scaling or zeros
+export LEARNING_RATE=0.01
+export NUM_EPOCHS=10
 export MAX_SEQUENCE_LENGTH=100
 
-export MINI_BATCH_SIZE=32
+export MINI_BATCH_SIZE=8
 export EMBEDDING_FILE=glove.6B.50d.txt,unk-eng.vec
 
 export DT_NAME=4dim
